@@ -15,6 +15,8 @@ import coursesRoutes from './routes/courses.js';
 import postsRoutes from './routes/posts.js';
 import treeholeRoutes from './routes/treehole.js';
 import appointmentsRoutes from './routes/appointments.js';
+import sortingRoutes from './routes/sorting.js';
+import aiRoutes from './routes/ai.js';
 
 // 加载环境变量
 dotenv.config();
@@ -88,6 +90,8 @@ app.use('/api/courses', coursesRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/treehole', treeholeRoutes);
 app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/sorting', sortingRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404处理
 app.use((req, res) => {
