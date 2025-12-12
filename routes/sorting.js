@@ -43,12 +43,13 @@ router.get('/questions', async (req, res) => {
       });
     }
 
-    // 获取所有活跃题目
+    // 获取所有活跃题目（限制15道）
     const { data: questions, error } = await supabase
       .from('sorting_questions')
       .select('id, question, options, category, order_index')
       .eq('is_active', true)
-      .order('order_index');
+      .order('order_index')
+      .limit(15); // 确保只返回15道题
 
     if (error) {
       throw error;
