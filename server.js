@@ -96,15 +96,17 @@ app.use('/api/auth/register', authLimiter);
 
 // ============= 路由配置 =============
 
-// 健康检查
-app.get('/health', (req, res) => {
+// 健康检查 - 支持 /health 和 /api/health
+const healthCheck = (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     service: '心屿学院API',
     version: '1.0.0'
   });
-});
+};
+app.get('/health', healthCheck);
+app.get('/api/health', healthCheck);
 
 // API路由
 app.use('/api/auth', authRoutes);
