@@ -4,15 +4,36 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// 获取分院测试题目（需要认证）
-router.get('/questions', authenticateToken, async (req, res) => {
+// 获取分院测试题目（可选认证：如果有token则检查是否已完成，没有token也可以获取题目）
+router.get('/questions', async (req, res) => {
   try {
-    // 检查用户是否已完成分院测试
-    const { data: user } = await supabase
-      .from('users')
-      .select('sorting_completed, house')
-      .eq('id', req.user.id)
-      .single();
+    // 尝试获取用户信息（如果有token）
+    let user = null;
+    if (req.headers.authorization) {
+      try {
+        const jwt = (await import('jsonwebtoken')).default;
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { data } = await supabase
+          .from('users')
+          .select('id, sorting_completed, house')
+          .eq('id', decoded.userId)
+          .single();
+        user = data;
+      } catch (error) {
+        // token无效或过期，忽略，继续获取题目
+        console.log('Token验证失败，继续获取题目:', error.message);
+      }
+    }
+
+    // 如果用户已完成分院测试，返回提示
+    if (user && user.sorting_completed) {
+      return res.json({
+        success: false,
+        message: '您已完成分院测试',
+        data: { house: user.house }
+      });
+    }
 
     if (user && user.sorting_completed) {
       return res.json({
@@ -237,4 +258,5 @@ router.get('/history', authenticateToken, async (req, res) => {
 });
 
 export default router;
+
 
