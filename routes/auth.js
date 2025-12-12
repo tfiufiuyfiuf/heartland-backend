@@ -57,12 +57,20 @@ router.post('/register', registerValidation, async (req, res) => {
       });
     }
 
-    // 检查用户名是否已注册
-    const { data: existingUsername } = await supabase
+    // 检查用户名是否已注册（使用 maybeSingle 避免没有数据时出错）
+    const { data: existingUsername, error: usernameError } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('username', username)
-      .single();
+      .maybeSingle();
+
+    if (usernameError && usernameError.code !== 'PGRST116') {
+      console.error('检查用户名失败:', usernameError);
+      return res.status(500).json({ 
+        success: false, 
+        message: '服务器错误，请稍后重试' 
+      });
+    }
 
     if (existingUsername) {
       return res.status(400).json({ 
@@ -73,11 +81,19 @@ router.post('/register', registerValidation, async (req, res) => {
 
     // 如果提供了手机号，检查是否已注册
     if (phone) {
-      const { data: existingPhone } = await supabase
+      const { data: existingPhone, error: phoneError } = await supabaseAdmin
         .from('users')
         .select('id')
         .eq('phone', phone)
-        .single();
+        .maybeSingle();
+
+      if (phoneError && phoneError.code !== 'PGRST116') {
+        console.error('检查手机号失败:', phoneError);
+        return res.status(500).json({ 
+          success: false, 
+          message: '服务器错误，请稍后重试' 
+        });
+      }
 
       if (existingPhone) {
         return res.status(400).json({ 
@@ -89,11 +105,19 @@ router.post('/register', registerValidation, async (req, res) => {
 
     // 如果提供了邮箱，检查是否已注册
     if (email) {
-      const { data: existingEmail } = await supabase
+      const { data: existingEmail, error: emailError } = await supabaseAdmin
         .from('users')
         .select('id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
+
+      if (emailError && emailError.code !== 'PGRST116') {
+        console.error('检查邮箱失败:', emailError);
+        return res.status(500).json({ 
+          success: false, 
+          message: '服务器错误，请稍后重试' 
+        });
+      }
 
       if (existingEmail) {
         return res.status(400).json({ 
@@ -138,16 +162,23 @@ router.post('/register', registerValidation, async (req, res) => {
 
     if (error) {
       console.error('创建用户失败:', error);
+      console.error('错误详情:', JSON.stringify(error, null, 2));
       return res.status(500).json({ 
         success: false, 
-        message: '注册失败，请稍后重试' 
+        message: '注册失败，请稍后重试',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
 
-    // 创建用户个人资料
-    await supabaseAdmin
+    // 创建用户个人资料（忽略错误，因为可能已存在）
+    const { error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .insert({ user_id: newUser.id });
+    
+    if (profileError) {
+      console.warn('创建用户个人资料失败（可能已存在）:', profileError);
+      // 不返回错误，因为用户已经创建成功
+    }
 
     // 生成token
     const token = generateToken(newUser.id);
