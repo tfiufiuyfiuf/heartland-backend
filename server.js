@@ -31,9 +31,33 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS配置
+// CORS配置 - 支持多个前端域名
+const allowedOrigins = [
+  'http://localhost:5500',
+  'http://localhost:3000',
+  'https://heartland-webapp.vercel.app',
+  'https://heartland-webapp-29df.vercel.app',
+  'https://delicate-taiyaki-0893e7.netlify.app',
+  process.env.FRONTEND_URL
+].filter(Boolean); // 移除 undefined 值
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
+  origin: function (origin, callback) {
+    // 允许没有 origin 的请求（如移动应用、Postman等）
+    if (!origin) return callback(null, true);
+    
+    // 检查是否在允许列表中
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      // 也允许所有 netlify.app 和 vercel.app 的子域名
+      if (origin.includes('.netlify.app') || origin.includes('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
