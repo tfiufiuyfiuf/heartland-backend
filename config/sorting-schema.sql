@@ -226,3 +226,4 @@ INSERT INTO sorting_questions (question, options, category, difficulty, order_in
 -- 验证插入结果
 SELECT COUNT(*) as total_questions FROM sorting_questions;
 
+
