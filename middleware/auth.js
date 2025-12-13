@@ -26,10 +26,14 @@ export const authenticateToken = async (req, res, next) => {
       // 从数据库获取用户信息（使用 maybeSingle 避免查询不到时出错）
       console.log('验证token，userId:', decoded.userId, '类型:', typeof decoded.userId);
       
+      // 确保 userId 是字符串格式（Supabase UUID 需要字符串）
+      const userId = String(decoded.userId);
+      console.log('查询用户，转换后的userId:', userId);
+      
       const { data: user, error } = await supabase
         .from('users')
         .select('id, username, phone, role, roles, avatar, house, points, level, is_active')
-        .eq('id', decoded.userId)
+        .eq('id', userId)
         .maybeSingle();
 
       if (error) {

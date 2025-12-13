@@ -105,9 +105,19 @@ router.get('/questions', async (req, res) => {
 router.post('/submit', authenticateToken, async (req, res) => {
   try {
     console.log('收到分院测试提交请求:', req.body);
+    console.log('请求用户信息:', req.user);
     const { answers, duration } = req.body;
-    const userId = req.user.id;
-    console.log('用户ID:', userId);
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      console.error('用户ID不存在，req.user:', req.user);
+      return res.status(401).json({
+        success: false,
+        message: '用户认证失败，请重新登录'
+      });
+    }
+    
+    console.log('用户ID:', userId, '类型:', typeof userId);
 
     if (!answers || !Array.isArray(answers)) {
       return res.status(400).json({
