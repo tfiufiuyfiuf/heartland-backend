@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { supabase } from '../config/database.js';
+import { supabase, supabaseAdmin } from '../config/database.js';
 
 // 验证JWT token
 export const authenticateToken = async (req, res, next) => {
@@ -30,7 +30,8 @@ export const authenticateToken = async (req, res, next) => {
       const userId = String(decoded.userId);
       console.log('查询用户，转换后的userId:', userId);
       
-      const { data: user, error } = await supabase
+      // 使用 supabaseAdmin 绕过 RLS 策略，确保能查询到用户
+      const { data: user, error } = await supabaseAdmin
         .from('users')
         .select('id, username, phone, role, roles, avatar, house, points, level, is_active')
         .eq('id', userId)
@@ -50,8 +51,8 @@ export const authenticateToken = async (req, res, next) => {
         console.error('用户不存在，userId:', userId, '类型:', typeof userId);
         console.error('原始decoded.userId:', decoded.userId, '类型:', typeof decoded.userId);
         
-        // 尝试用原始值再查询一次
-        const { data: userRetry, error: retryError } = await supabase
+        // 尝试用原始值再查询一次（使用Admin客户端）
+        const { data: userRetry, error: retryError } = await supabaseAdmin
           .from('users')
           .select('id, username')
           .eq('id', decoded.userId)
@@ -60,8 +61,8 @@ export const authenticateToken = async (req, res, next) => {
         if (userRetry) {
           console.log('使用原始值查询成功:', userRetry);
         } else {
-          // 尝试查找所有用户看看数据库是否有数据
-          const { data: allUsers, error: listError } = await supabase
+          // 尝试查找所有用户看看数据库是否有数据（使用Admin客户端）
+          const { data: allUsers, error: listError } = await supabaseAdmin
             .from('users')
             .select('id, username')
             .limit(5);
