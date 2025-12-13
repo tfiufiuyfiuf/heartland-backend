@@ -35,6 +35,10 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:5500',
   'http://localhost:3000',
+  'http://localhost:8000',
+  'http://localhost:8080',
+  'http://127.0.0.1:8000',
+  'http://127.0.0.1:8080',
   'https://heartland-webapp.vercel.app',
   'https://heartland-webapp-29df.vercel.app',
   'https://delicate-taiyaki-0893e7.netlify.app',
@@ -46,6 +50,13 @@ const corsOptions = {
     // 允许没有 origin 的请求（如移动应用、Postman等）
     if (!origin) return callback(null, true);
     
+    // 开发环境：允许所有 localhost 和 127.0.0.1 的请求
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        return callback(null, true);
+      }
+    }
+    
     // 检查是否在允许列表中
     if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
       callback(null, true);
@@ -54,12 +65,15 @@ const corsOptions = {
       if (origin.includes('.netlify.app') || origin.includes('.vercel.app')) {
         callback(null, true);
       } else {
+        console.warn('CORS blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
