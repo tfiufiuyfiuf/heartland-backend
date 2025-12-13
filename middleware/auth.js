@@ -47,17 +47,37 @@ export const authenticateToken = async (req, res, next) => {
       }
 
       if (!user) {
-        console.error('用户不存在，userId:', decoded.userId, '类型:', typeof decoded.userId);
-        // 尝试查找所有用户看看数据库是否有数据
-        const { data: allUsers, error: listError } = await supabase
+        console.error('用户不存在，userId:', userId, '类型:', typeof userId);
+        console.error('原始decoded.userId:', decoded.userId, '类型:', typeof decoded.userId);
+        
+        // 尝试用原始值再查询一次
+        const { data: userRetry, error: retryError } = await supabase
           .from('users')
-          .select('id')
-          .limit(5);
-        console.log('数据库中的前5个用户ID:', allUsers);
+          .select('id, username')
+          .eq('id', decoded.userId)
+          .maybeSingle();
+        
+        if (userRetry) {
+          console.log('使用原始值查询成功:', userRetry);
+        } else {
+          // 尝试查找所有用户看看数据库是否有数据
+          const { data: allUsers, error: listError } = await supabase
+            .from('users')
+            .select('id, username')
+            .limit(5);
+          console.log('数据库中的前5个用户ID:', allUsers);
+          console.log('重试查询错误:', retryError);
+        }
+        
         return res.status(404).json({ 
           success: false, 
-          message: '用户不存在',
-          debug: process.env.NODE_ENV === 'development' ? `userId: ${decoded.userId}` : undefined
+          message: '用户不存在，请重新登录',
+          debug: process.env.NODE_ENV === 'development' ? {
+            userId: userId,
+            originalUserId: decoded.userId,
+            userIdType: typeof userId,
+            originalUserIdType: typeof decoded.userId
+          } : undefined
         });
       }
       
