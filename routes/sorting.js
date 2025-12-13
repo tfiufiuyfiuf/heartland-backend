@@ -55,23 +55,32 @@ router.get('/questions', async (req, res) => {
       throw error;
     }
 
-    // 打乱选项顺序（保持题目顺序）
+    // 打乱选项顺序（保持题目顺序），并为每个选项创建唯一标识
     const questionsWithShuffledOptions = questions.map(q => {
-      const options = q.options.map((opt, idx) => ({
-        id: idx,
-        text: opt.text
-      }));
+      // 为每个选项创建唯一标识（基于原始索引和文本的hash）
+      const options = q.options.map((opt, idx) => {
+        // 创建一个简单的hash作为唯一标识（基于题目ID和原始索引）
+        const uniqueId = Buffer.from(`${q.id}-${idx}-${opt.text}`).toString('base64').substring(0, 16);
+        return {
+          id: uniqueId, // 唯一标识符
+          text: opt.text,
+          originalIndex: idx // 保留原始索引用于后端匹配
+        };
+      });
       
-      // Fisher-Yates 洗牌算法
+      // Fisher-Yates 洗牌算法打乱顺序
       for (let i = options.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [options[i], options[j]] = [options[j], options[i]];
       }
 
+      // 移除originalIndex，不暴露给前端（只保留id和text）
+      const publicOptions = options.map(({ id, text }) => ({ id, text }));
+
       return {
         id: q.id,
         question: q.question,
-        options,
+        options: publicOptions,
         category: q.category
       };
     });
@@ -139,11 +148,29 @@ router.post('/submit', authenticateToken, async (req, res) => {
 
     const questionMap = new Map(questions.map(q => [q.id, q]));
 
+    // 处理每个答案
     answers.forEach(answer => {
       const question = questionMap.get(answer.questionId);
-      if (question && question.options[answer.optionId]) {
+      if (!question) return;
+
+      // 如果使用的是旧的optionId（数字索引），直接使用
+      if (typeof answer.optionId === 'number') {
         const option = question.options[answer.optionId];
-        scores[option.house] += option.score;
+        if (option) {
+          scores[option.house] += option.score;
+        }
+        return;
+      }
+
+      // 如果使用的是新的唯一ID（字符串），需要匹配
+      // 重新生成唯一ID来匹配（使用相同的生成规则）
+      for (let idx = 0; idx < question.options.length; idx++) {
+        const opt = question.options[idx];
+        const uniqueId = Buffer.from(`${answer.questionId}-${idx}-${opt.text}`).toString('base64').substring(0, 16);
+        if (uniqueId === answer.optionId) {
+          scores[opt.house] += opt.score;
+          break;
+        }
       }
     });
 
