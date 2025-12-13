@@ -104,8 +104,10 @@ router.get('/questions', async (req, res) => {
 // 提交分院测试答案
 router.post('/submit', authenticateToken, async (req, res) => {
   try {
+    console.log('收到分院测试提交请求:', req.body);
     const { answers, duration } = req.body;
     const userId = req.user.id;
+    console.log('用户ID:', userId);
 
     if (!answers || !Array.isArray(answers)) {
       return res.status(400).json({
