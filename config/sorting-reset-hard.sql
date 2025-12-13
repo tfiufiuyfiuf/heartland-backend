@@ -29,7 +29,7 @@ INSERT INTO sorting_questions (question, options, category, difficulty, order_in
     {"text": "评估风险和可能的收益，谨慎处理", "house": "slytherin", "score": 3}
   ]'::jsonb,
   'values',
-  4,
+  3,
   2
 ),
 (
@@ -77,7 +77,7 @@ INSERT INTO sorting_questions (question, options, category, difficulty, order_in
     {"text": "追求成功和影响力的生活", "house": "slytherin", "score": 3}
   ]'::jsonb,
   'scenario',
-  4,
+  3,
   6
 ),
 (
@@ -161,7 +161,7 @@ INSERT INTO sorting_questions (question, options, category, difficulty, order_in
     {"text": "成功卓越的人", "house": "slytherin", "score": 3}
   ]'::jsonb,
   'personality',
-  4,
+  3,
   13
 ),
 (
@@ -185,7 +185,7 @@ INSERT INTO sorting_questions (question, options, category, difficulty, order_in
     {"text": "互利和共赢", "house": "slytherin", "score": 3}
   ]'::jsonb,
   'personality',
-  4,
+  3,
   15
 );
 
